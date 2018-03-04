@@ -28,18 +28,32 @@ img {
 }
 
 
-.ads {
+#ad-slider {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: black;
+  .ad {
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
-  .ad {
-    margin: 0;
-    // width: 100vh;
-    // height: 100vh;
-    img {
+    opacity: 0;
+    &.active-slide {
+      opacity: 1;
+    }
+    picture {
+      height: 100%;
       width: 100%;
+      position: absolute;
+    }
+    img, source {
+      width: 100%;
+      height: 100%;      
+      object-fit: cover;
     }
   }
 }

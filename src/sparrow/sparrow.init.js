@@ -6,12 +6,15 @@
 import { remote } from "electron";
 import jetpack from "fs-jetpack";
 import $ from "jquery";
-import Siema from 'siema';
-// import { greet } from "./hello_world/hello_world";
+// import tns from 'tiny-slider';
+import "./sparrow.register-service-worker.js";
 import env from "env";
 
+// console.log(tns);
+
+
 const app = remote.app;
-const userDataDir = jetpack.cwd(app.getPath("userData"));
+const net = remote.net
 
 import firebase from '@firebase/app';
 import '@firebase/firestore'
@@ -20,6 +23,7 @@ import '@firebase/firestore'
 const si = require('systeminformation');
 const wifi = require('node-wifi');
 const isOnline = require('is-online');
+const getUrls = require('get-urls');
 // const location = require('isomorphic-location')
 
 // Example retrieve IP from request
@@ -43,170 +47,249 @@ firebase.initializeApp(config);
 
 const db = firebase.firestore();
 
-export default class Sparrow2 {
-  constructor(){
-    console.log("initialized class");    
-  }
-}
+class Sparrow {
 
-/**
- * Initializes the Sparrow app.
- */
-function Sparrow() {
-  this.filters = {
-    city: '',
-    price: '',
-    category: '',
-    sort: 'Rating'
-  };
+  constructor() {
+    console.log("initialized Sparrow class");
+    this.sliderElement = document.getElementById('ad-slider')
+    this.deviceData = {};
+    this.dialogs = {};
+    this.deviceId = {};
+    this.ads = {};
+    this.slider = false; 
+    this.slideTimeOut = 10000
+    this.adSets = {
+      a: "test",
+      b: "test 2"
+    }; 
 
-  this.deviceData = {};
-  this.dialogs = {};
-  this.deviceId = {};
-  this.ads = {};
-  this.slider = {};
-  this.test();
-  
-  
-
-  // check if online
-  this.isOnline()
-  .then(online => {
-    // if online, get device info
-    this.renderSlider()          
-    if (online) {
-      this.getDeviceInformation()
-      .then(deviceData => {
-        this.deviceData = deviceData;
-        // update in db
-        this.updateDevice()
-        .then(()=> {
-          console.log("yaas");
-          this.getAds(this.deviceData.serial)
-          // render 
-          .then(()=> {
-            this.renderAds();
-            // console.log(this.ads);
+    // Listen to when an image src or alt gets changed (ex: slideshow, etc.)
+    this.sliderElement.addEventListener("DOMNodeInserted", function (e) {
+      $('.ad').first().addClass('active-slide')      
+      // Record the occurrence
+    }, false);
+    
+    
+    this.isOnline()
+      .then(online => {
+        if (!online)
+          return this.connectToWifi();            
+        this.getDeviceInformation()
+          .then(deviceData => {
+            this.deviceData = deviceData;
+            // update in db
+            this.updateDevice()
+              .then(() => {
+                this.reRenderSlider()                                              
+                this.getAdsets(this.deviceData.serial)
+                  // // render 
+                  // .then(() => {
+                  //   // this.renderAds();
+                  //   // console.log(this.ads);
+                  // });
+              })
           });
-        })
+        console.log(online);
+      })
+  }
+
+    updateDevice() {
+      console.log(this.deviceData.serial);
+      // see if devices exist
+      const devicesRef = db.collection("devices");
+      const query = devicesRef.where("serialNumber", "==", this.deviceData.serial);
+
+      return query.get().then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          devicesRef.doc(`${doc.id}`).set({
+            updateAt: firebase.firestore.FieldValue.serverTimestamp(),
+            serialNumber: this.deviceData.serial,
+            deviceMeta: this.deviceData
+          }, {
+              merge: true
+            });
+        });
       });
     }
-    // is offline
-    else {
-      this.connectToWifi();
+
+    // native notifications
+    notification(title, body) {
+      new Notification(title, {
+        body: body
+      })
     }
-  });
 
 
-  // if online, get device info and update databse it
-
-  
-
-  // firebase.auth().signInAnonymously().then(() => {
-  //   console.log("yoow");    
-    
-  // }).catch(err => {
-  //   console.log(err);
-  // });
-}
-
-
-/**
- * Check the statitacs main. Yu don know.
- */
-
-Sparrow.prototype.updateDevice = function() {
-
-  // console.log(this.deviceData);
-  console.log(this.deviceData.serial);
-  
-  // see if devices exist
-  const devicesRef = db.collection("devices");
-  const query = devicesRef.where("serialNumber", "==", this.deviceData.serial);
-
-  return query.get().then((querySnapshot) => {
-    return querySnapshot.forEach((doc) => {    
-      devicesRef.doc(`${doc.id}`).set({
-        updateAt: firebase.firestore.FieldValue.serverTimestamp(),
-        serialNumber: this.deviceData.serial,
-        deviceMeta: this.deviceData
-      }, {merge: true});    
-      // console.log(`${doc.id} => ${doc.data()}`);
+  getDeviceInformation() {
+    const getSystemInfo = si.system()
+    getSystemInfo.then((data) => {
+      // return data;    
+      // console.log(data);        
+      wifi.getCurrentConnections().then((currentConnections, err) => {
+        if (err) {
+          console.log(err)
+        } else {
+          // console.log(currentConnections);    
+          // console.log(data);
+          data.network = currentConnections
+          console.log(data.network);
+        }
+      });
     });
-  });
-};
 
-/**
- * Check if has internet connection.
- */
-
-Sparrow.prototype.isOnline = function(){
-  return isOnline().then(online => {
-    return online;
-  });
-}
+    return getSystemInfo
+  }
 
 
-/**
- * Connect to wifi using provided wifi passwords.
- */
+  /**
+   * Check if has internet connection.
+   */
+  isOnline() {
+    return isOnline().then(online => {
+      return online;
+    });
+  }
 
-Sparrow.prototype.connectToWifi = function(){
-  console.log("connect to wifi");
-}
+  /**
+   * Connect to wifi using provided wifi passwords.
+   */
+  connectToWifi() {
+    console.log("connect to wifi");
+  }
 
-Sparrow.prototype.getDeviceInformation = function(){
-  const getSystemInfo = si.system()
-  getSystemInfo.then((data)=> {
-    // return data;    
-    // console.log(data);        
-    wifi.getCurrentConnections().then((currentConnections, err) => {
-      if (err) { 
-        console.log(err) 
+
+  getAds(adsetDoc){
+    const adsString = JSON.stringify(adsetDoc.data());
+    let adUrls = getUrls(adsString)
+    adUrls = Array.from(adUrls)
+    //  add all assetUrls to cache, then load slider
+    this.cacheAssets(adUrls).then(() => {
+      this.renderSlide(adsetDoc.id, adsetDoc.data())
+    });
+  }
+  /**
+   * 
+   */
+  getAdsets (deviceId) {
+    console.log("getting ad of:");
+    const deviceAdsetsRef = db.collection("/deviceAdsets").doc(deviceId);
+    deviceAdsetsRef.onSnapshot((doc) => {
+      const adSets = doc.data().adSets;
+      Object.entries(adSets).forEach(([key, adsetId]) => {
+        // get adsets and also watch for changes in firestore.
+        console.log("looks like we added an adset");        
+        db.collection("adsets").doc(adsetId).onSnapshot((doc) => {
+          this.getAds(doc)
+        });
+      });     
+    })
+  };
+
+  renderSlide(id, adSet) {
+    console.log(adSet);
+    const landscape = adSet.ads['1920_1080'].default
+    const potrait = adSet.ads['1080_1920'].default || null
+    // fucking orientation isn't working :-S
+    let content = `
+      <picture>
+        <source srcset="${potrait}" media="screen and (max-width: 1000px)"/>
+        <source srcset="${landscape}" media="screen and (min-width: 1000px)" />
+        <img src="${landscape}" alt="">
+      </picture>
+      `
+    const elem = document.getElementById(id);
+    if (elem) {
+      elem.innerHTML = content
+    } else {
+      const slide = document.createElement('div');
+      slide.className = 'ad';
+      slide.id = id
+      slide.innerHTML = content;
+      this.sliderElement.append(slide)    
+    }
+  }
+
+  reRenderSlider () {
+
+    // setInterval 
+    setInterval(() => {
+      // if no active class, add to first
+      const $activeSlide = $('.active-slide');
+      if ($activeSlide === undefined || $activeSlide.length == 0){
+        $('.ad').first().addClass('active-slide')
       }
       else {
-        // console.log(currentConnections);    
-        // console.log(data);
-        data.network = currentConnections
-        console.log(data.network);        
+        let nextSlide = $activeSlide.removeClass('active-slide').next()
+        if (nextSlide.length) {
+          nextSlide.addClass('active-slide')
+        }
+        else {
+          $('.ad').first().addClass('active-slide')
+        }
       }
+
+    }, this.slideTimeOut);
+  };
+
+
+  detectDbChanges () {
+    console.log("detect db changes and refresh");
+  };
+
+
+  addAssetToCache(assetUrl){
+    return new Promise((resolve, reject) => {
+      caches.open('assets')
+      .then(cache =>{
+        cache.add(assetUrl)
+          .then(() => {
+            console.log(`Added ${assetUrl} to cache`)
+            resolve()
+          })
+          .catch(err => {
+              console.log('error when syncing assets', err)
+              reject()
+          })
+        }).catch(err => {
+          console.log('error when opening cache', err)
+          reject()
+        })
+    })
+  }
+
+
+  cacheAssets(assets) {
+    return new Promise(function (resolve, reject) {
+      // open cache
+      caches.open('assets')
+        .then(cache => {
+          // the API does all the magic for us
+          cache.addAll(assets)
+            .then(() => {
+              console.log('all assets added to cache')
+              resolve()
+            })
+            .catch(err => {
+              console.log('error when syncing assets', err)
+              reject()
+            })
+        }).catch(err => {
+          console.log('error when opening cache', err)
+          reject()
+        })
     });
-  });
+  }
 
-  return getSystemInfo
+  // remove out of date ads and dowload new ads
+  downloadAds () {
+    const adsString = JSON.stringify(this.ads);
+    let adUrls = getUrls(adsString);
+    adUrls = Array.from(adUrls)
+    this.cacheAssets(adUrls);     
+    // console.log(adUrls.Set);    
+  }
 }
-
-
-/**
- * All Data Functions
- */
-
-
-Sparrow.prototype.detectDbChanges = function(){
-  console.log("detect db changes and refresh");  
-};
-
-Sparrow.prototype.getAds = function (deviceId) {
-  console.log("getting ad of:");
-  console.log(deviceId);
-  
-  
-  const devicesRef = db.collection("adsets");
-  const query = devicesRef.where(`devices.${deviceId}`, "==", true);
-  // return firebase.firestore().collection('restaurants').doc(deviceId).get();
-  return query.get().then((querySnapshot) => {
-    return querySnapshot.forEach((doc) => {
-      this.ads = doc.data();
-    });
-  });
-};
-
-
-// remove out of date ads and dowload new ads
-Sparrow.prototype.downloadAds = function () {
-
-}
-
+// end of class Sparrow
 
 
 /**
@@ -214,41 +297,4 @@ Sparrow.prototype.downloadAds = function () {
  */
 
 
-Sparrow.prototype.renderSlider = function() {
-  this.slider = new Siema({
-    duration: 0,
-    loop: true
-  });
-
-  // listen for keydown event
-  setInterval(() => this.slider.next(), 1000);
-}
-
-Sparrow.prototype.renderAds = function () {
-  const sliderElement = document.getElementById('ad-slider');
-  const ads = this.ads.ads;
-
-  const adElement = function(){
-    return '<picture><source srcset = "http://via.placeholder.com/1080x1920/ffcb00/?text=lol" media = "(orientation: potrait)" /><source srcset="http://via.placeholder.com/1920x1080/ffcb00/?text=lol" media="(orientation: landscape)" /><img src="http://via.placeholder.com/1080x1920/ffcb00/?text=lol" alt=""></picture>';     
-  }
-
-
-  for (const ad in ads) {
-    if (ads.hasOwnProperty(ad)) {
-      const element = ads[ad];
-      const slide = document.createElement('div');
-      slide.innerHTML = adElement();
-      this.slider.append(slide)
-    }
-  }
-  // ads.forEach(element => {
-  //   console.log(element);    
-  // });
-};
- 
-
-
-
-
-window.onload = () => {
-};
+export default Sparrow

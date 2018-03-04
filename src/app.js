@@ -1,8 +1,8 @@
 import "./sass/main.scss";
-import sparrow from "./sparrow/sparrow.init.js";
+import Sparrow from "./sparrow/sparrow.init.js";
 // import './sparrow/sparrow.data.js';
 
-new sparrow();
+new Sparrow();
 
 // import { lory } from 'lory.js';
 // Small helpers you might want to keep
