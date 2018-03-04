@@ -11,7 +11,7 @@ body {
   justify-content: center;
   align-items: center;
   font-family: sans-serif;
-  color: #525252;
+  // background-color: blue !important;
 }
 
 a {
@@ -22,3 +22,25 @@ a {
 .container {
   text-align: center;
 }
+
+img {
+  max-width: 100%;
+}
+
+
+.ads {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  .ad {
+    margin: 0;
+    // width: 100vh;
+    // height: 100vh;
+    img {
+      width: 100%;
+    }
+  }
+}
+

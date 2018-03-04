@@ -24,8 +24,19 @@ module.exports = env => {
           use: ["babel-loader"]
         },
         {
+          test: /\.scss$/,
+          exclude: /node_modules/,          
+          use: [{
+            loader: "style-loader"
+          }, {
+            loader: "css-loader"
+          }, {
+            loader: "sass-loader"
+          }]
+        },
+        {
           test: /\.css$/,
-          use: ["style-loader", "css-loader"]
+          use: ["style-loader", "css-loader", "sass-loader"]
         }
       ]
     },

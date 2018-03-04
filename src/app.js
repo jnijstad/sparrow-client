@@ -1,5 +1,10 @@
-import "./stylesheets/main.css";
+import "./sass/main.scss";
+import sparrow from "./sparrow/sparrow.init.js";
+// import './sparrow/sparrow.data.js';
 
+new sparrow();
+
+// import { lory } from 'lory.js';
 // Small helpers you might want to keep
 import "./helpers/context_menu.js";
 import "./helpers/external_links.js";
@@ -10,7 +15,7 @@ import "./helpers/external_links.js";
 
 import { remote } from "electron";
 import jetpack from "fs-jetpack";
-import { greet } from "./hello_world/hello_world";
+// import { greet } from "./hello_world/hello_world";
 import env from "env";
 
 const app = remote.app;
@@ -26,10 +31,8 @@ const osMap = {
   linux: "Linux"
 };
 
-document.querySelector("#app").style.display = "block";
-document.querySelector("#greet").innerHTML = greet();
-document.querySelector("#os").innerHTML = osMap[process.platform];
-document.querySelector("#author").innerHTML = manifest.author;
-document.querySelector("#env").innerHTML = env.name;
-document.querySelector("#electron-version").innerHTML =
-  process.versions.electron;
+// const prev = document.querySelector('.prev');
+// const next = document.querySelector('.next');
+
+// prev.addEventListener('click', () => mySiema.prev());
+// next.addEventListener('click', () => mySiema.next());

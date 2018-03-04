@@ -1,27 +1,40 @@
 <!doctype html>
 <html>
+
 <head>
   <meta charset="utf-8">
-  <title>Electron Boilerplate</title>
+  <title>Sparrow Media Client</title>
+  <!-- See https://goo.gl/OOhYW5 -->
+  <link rel="manifest" href="/manifest.json">
 </head>
+
 <body>
 
-  <div id="app" class="container" style="display: none;">
-    <h1 id="greet"></h1>
-    <p>
-      Welcome to <a href="http://electron.atom.io" class="js-external-link">Electron</a> app running on this <strong id="os"></strong> machine.
-    </p>
-    <p>
-      App author: <strong id="author"></strong>
-    </p>
-    <p>
-      Environment: <strong id="env"></strong>
-    </p>
-    <p>
-      Electron version: <strong id="electron-version"></strong>
-    </p>
+<div id="ad-slider" class="siema ads">
+  <div class="ad">
+    <picture>
+        <source srcset="http://via.placeholder.com/1080x1920/4fccf4/" media="(orientation: potrait)"/>
+        <source srcset="http://via.placeholder.com/1920x1080/4fccf4/" media="(orientation: landscape)"/>
+        <img src="http://via.placeholder.com/1080x1920/4fccf4/" alt="">
+    </picture>
   </div>
+  <div class="ad">
+    <picture>
+      <source srcset="http://via.placeholder.com/1080x1920/212121/" media="(orientation: potrait)" />
+      <source srcset="http://via.placeholder.com/1920x1080/212121/" media="(orientation: landscape)" />
+      <img src="http://via.placeholder.com/1080x1920/212121/" alt="">
+    </picture>
+  </div><div class="ad">
+    <picture>
+      <source srcset="http://via.placeholder.com/1080x1920/ffcb00/" media="(orientation: potrait)" />
+      <source srcset="http://via.placeholder.com/1920x1080/ffcb00/" media="(orientation: landscape)" />
+      <img src="http://via.placeholder.com/1080x1920/ffcb00/" alt="">
+    </picture>
+  </div>
+</div>
+
 
   <script src="app.js"></script>
 </body>
+
 </html>
