@@ -14,6 +14,17 @@ import createWindow from "./helpers/window";
 // in config/env_xxx.json file.
 import env from "env";
 
+const devWindow = {
+  width: 400,
+  height: 400
+}
+
+const prodWindow = {
+  fullscreen: true,
+  kiosk: true,
+  autoHideMenuBar: true
+}
+
 const setApplicationMenu = () => {
   const menus = [editMenuTemplate];
   if (env.name !== "production") {
@@ -30,13 +41,17 @@ if (env.name !== "production") {
   app.setPath("userData", `${userDataPath} (${env.name})`);
 }
 
+let mainWindow
+
 app.on("ready", () => {
   setApplicationMenu();
 
-  const mainWindow = createWindow("main", {
-    width: 400,
-    height: 400
-  });
+  if (env.name !== "production") {
+    mainWindow = createWindow("main", devWindow);
+  }
+  else {
+    mainWindow = createWindow("main", prodWindow);    
+  }
 
   mainWindow.loadURL(
     url.format({

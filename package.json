@@ -15,6 +15,16 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "win": {
+      "target": "NSIS",
+      "icon": "build/icon.ico"
+    },
     "directories": {
       "buildResources": "resources"
     },
@@ -34,7 +44,9 @@
     "e2e": "mocha temp/e2e.js --require source-map-support/register",
     "test": "npm run unit && npm run e2e",
     "start": "node build/start.js",
-    "release": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder"
+    "release": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder",
+    "rebuild": "electron-rebuild -f -w grpc",
+    "pack": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder --dir"
   },
   "dependencies": {
     "electron-log": "^2.2.14",
@@ -46,6 +58,7 @@
     "is-online": "^7.0.0",
     "jquery": "^3.3.1",
     "node-wifi": "^2.0.4",
+    "ramda": "^0.25.0",
     "systeminformation": "^3.37.4"
   },
   "devDependencies": {
@@ -56,8 +69,9 @@
     "chai": "^4.1.0",
     "css-loader": "^0.28.7",
     "electron": "1.8.2",
-    "electron-builder": "^19.43.3",
+    "electron-builder": "^20.2.0",
     "electron-mocha": "^5.0.0",
+    "electron-rebuild": "^1.7.3",
     "friendly-errors-webpack-plugin": "^1.6.1",
     "mocha": "^4.0.1",
     "node-sass": "^4.7.2",

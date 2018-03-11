@@ -27,6 +27,31 @@ img {
   max-width: 100%;
 }
 
+.sparrow-logger {
+  position: fixed;
+  z-index: 99;
+  right: 20px;
+  top: 20px;
+  width: 250px;
+  height: 20px;
+  font-family: sans-serif;
+  background-color: rgba(black, 0.7);
+  border-radius: 10px;
+  padding: 20px 20px 20px 40px;
+  border: black 1px solid;
+  box-shadow: 0 0 10px black;
+  color: white;
+  font-size: 14px;
+  vertical-align: middle;
+  display: none;
+}
+
+body.sparrow-on {
+  .sparrow-logger {
+    opacity: 0;
+  }
+}
+
 
 #ad-slider {
   position: fixed;
@@ -34,7 +59,7 @@ img {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: black;
+  background-color: #292d3f;
   .ad {
     position: absolute;
     top: 0;
@@ -50,7 +75,7 @@ img {
       width: 100%;
       position: absolute;
     }
-    img, source {
+    img, source, video {
       width: 100%;
       height: 100%;      
       object-fit: cover;
