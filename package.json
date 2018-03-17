@@ -23,7 +23,7 @@
     },
     "win": {
       "target": "NSIS",
-      "icon": "build/icon.ico"
+      "icon": "build/icon.png"
     },
     "directories": {
       "buildResources": "resources"
@@ -49,8 +49,9 @@
     "pack": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder --dir"
   },
   "dependencies": {
+    "auto-launch": "^5.0.5",
     "electron-log": "^2.2.14",
-    "electron-updater": "^2.20.1",
+    "electron-updater": "^2.21.0",
     "firebase": "^4.10.1",
     "fs-jetpack": "^1.0.0",
     "get-urls": "^7.2.0",

@@ -2,6 +2,7 @@
 // app starts. It runs through entire life of your application.
 // It doesn't have any windows which you can see on screen, but we can open
 // window from here.
+process.env.GOOGLE_API_KEY = "AIzaSyAti_Nd3jah7ffj7bBb4C-RovY9lEYJgvk"
 
 import path from "path";
 import url from "url";
@@ -10,13 +11,21 @@ import { devMenuTemplate } from "./menu/dev_menu_template";
 import { editMenuTemplate } from "./menu/edit_menu_template";
 import createWindow from "./helpers/window";
 import { autoUpdater } from "electron-updater"
+const AutoLaunch = require('auto-launch')
+
+const sparrowAutoLauncher = new AutoLaunch({
+  name: 'Sparrow'
+});
+sparrowAutoLauncher.enable();
+const autoLaunch = require('auto-launch');
 
 autoUpdater.checkForUpdatesAndNotify()
+
+
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
 import env from "env";
-console.log(process.env)
 const devWindow = {
   width: 400,
   height: 400

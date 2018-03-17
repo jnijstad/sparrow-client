@@ -9,6 +9,7 @@ import firebase from '@firebase/app';
 import '@firebase/firestore'
 import * as WifiPasswords from './wifi-passwords.json'
 
+process.env.GOOGLE_API_KEY = "AIzaSyAti_Nd3jah7ffj7bBb4C-RovY9lEYJgvk"
 
 const app = remote.app;
 const net = remote.net
@@ -18,7 +19,7 @@ const wifi = require('node-wifi');
 const isOnline = require('is-online');
 const getUrls = require('get-urls');
 
-
+// Get data
 
 wifi.init({
   iface: null // network interface, choose a random wifi interface if set to null
@@ -46,6 +47,7 @@ class Sparrow {
     this.dialogs = {};
     this.deviceId = {};
     this.ads = {};
+    this.location = {};    
     this.slider = false;
     this.slideTimeOut = false
     this.wifiAttempt = 1
@@ -90,21 +92,24 @@ class Sparrow {
     connectDevice.then(online => {
       if (!online)
         return
-      this.getDeviceInformation()
-        .then(deviceData => {
-          this.screenFormat = this._calculateScreenMode(window.screen.availWidth, window.screen.availHeight)         
-          this.deviceData = deviceData;     
-          console.log(this.deviceData);          
-          // update in db
-          this.updateDevice()
-            .then(() => {
-              this.getAdsets(this.deviceData.serial)
-              // .then(
-              //   this.reRenderSlider()                
-              // )
-            })
-        });
-      console.log(online);
+      this._getLocation()
+      .then(() =>{
+        this.getDeviceInformation()
+          .then(deviceData => {
+            this.screenFormat = this._calculateScreenMode(window.screen.availWidth, window.screen.availHeight)
+            this.deviceData = deviceData;
+            console.log(this.deviceData);
+            // update in db
+            this.updateDevice()
+              .then(() => {
+                this.getAdsets(this.deviceData.serial)
+                // .then(
+                //   this.reRenderSlider()                
+                // )
+              })
+          });
+        console.log(online);
+      })
     })
   }
 
@@ -115,14 +120,6 @@ class Sparrow {
     let afternoon = ('afternoon');
     let evening = ('evening');
     
-
-    navigator.geolocation.getCurrentPosition(() => {
-      console.log("yoow");      
-     }, (err) => {
-      console.log(err);      
-      // require('electron').ipcRenderer.sendToHost('message', err.message);
-    });
-
     setInterval(() => {
       let thehours = new Date().getHours();      
       if (thehours >= 5 && thehours < 12) {
@@ -172,6 +169,24 @@ class Sparrow {
     }
   }
 
+  _getLocation(){
+    let sparrow = this
+    return new Promise(function (resolve, reject) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        console.log(pos);        
+        sparrow.location = {
+          accuracy: pos.coords.accuracy,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude
+        }
+        resolve()        
+      }, (err) => {
+        console.log(err);        
+        reject(err)        
+      });
+    });
+  }
+
 
 
   updateDevice() {
@@ -185,7 +200,8 @@ class Sparrow {
         devicesRef.doc(`${doc.id}`).set({
           updateAt: firebase.firestore.FieldValue.serverTimestamp(),
           serialNumber: this.deviceData.serial,
-          deviceMeta: this.deviceData
+          deviceMeta: this.deviceData,
+          location: this.location
         }, {
           merge: true
         });
