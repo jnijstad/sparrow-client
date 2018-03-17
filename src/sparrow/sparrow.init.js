@@ -1,5 +1,3 @@
-console.log(firebase);
-
 import {
   remote
 } from "electron";
@@ -10,8 +8,6 @@ import env from "env";
 import firebase from '@firebase/app';
 import '@firebase/firestore'
 import * as WifiPasswords from './wifi-passwords.json'
-
-// console.log(tns);
 
 
 const app = remote.app;
@@ -54,6 +50,7 @@ class Sparrow {
     this.slideTimeOut = false
     this.wifiAttempt = 1
     this.numOfAdsets = 0
+    this.screenFormat = "landscape"
     this.adSets = {
       a: "test",
       b: "test 2"
@@ -76,9 +73,15 @@ class Sparrow {
     let observer = new MutationObserver(callback);
     // Start observing the target node for configured mutations
     observer.observe(this.sliderElement, config);
-
+      
+    
+    // init sparrow main
     this.init()
-    // initiate logger
+    // init timer for daytime ad variants
+    this.initTimeVariant()    
+    // init timer to poll weather for add variants
+
+    // init timer to check for morning, afternoon evening
   }
 
   init() {
@@ -89,7 +92,9 @@ class Sparrow {
         return
       this.getDeviceInformation()
         .then(deviceData => {
-          this.deviceData = deviceData;
+          this.screenFormat = this._calculateScreenMode(window.screen.availWidth, window.screen.availHeight)         
+          this.deviceData = deviceData;     
+          console.log(this.deviceData);          
           // update in db
           this.updateDevice()
             .then(() => {
@@ -103,15 +108,68 @@ class Sparrow {
     })
   }
 
+  initTimeVariant(){
+    console.log("time");    
+    let timeVariantClass;
+    let morning = ('morning');
+    let afternoon = ('afternoon');
+    let evening = ('evening');
+    
+
+    navigator.geolocation.getCurrentPosition(() => {
+      console.log("yoow");      
+     }, (err) => {
+      console.log(err);      
+      // require('electron').ipcRenderer.sendToHost('message', err.message);
+    });
+
+    setInterval(() => {
+      let thehours = new Date().getHours();      
+      if (thehours >= 5 && thehours < 12) {
+        timeVariantClass = morning;
+
+      } else if (thehours >= 12 && thehours < 18) {
+        timeVariantClass = afternoon;
+
+      } else if (thehours >= 18 && thehours < 5) {
+        timeVariantClass = evening;
+      }
+      else {
+        timeVariantClass = 'default';        
+      }
+      $('body').addClass(timeVariantClass)
+    }, 600)
+  }
+
+  _calculateScreenMode(width, height){
+    if (width > height) {
+      return "landscape"
+    }
+    else if (height > width){
+      return "potrait"
+    }
+    else {
+      return "square"
+    }
+  }
+
   initLogger() {
 
   }
 
-  log(message) {
+  log(message, type=false) {
     $('.sparrow-logger').find('.message').text(message)
-    $('.sparrow-logger').fadeIn(300, function () {
-      $(this).delay(200).fadeOut(400)
-    })
+    if (type === 'start') {
+      $('.sparrow-logger').fadeIn(300);
+    }
+    else if(type === 'end'){
+      $('.sparrow-logger').fadeOut(300)
+    }
+    else{
+      $('.sparrow-logger').fadeIn(300, function () {
+        $(this).delay(200).fadeOut(400)
+      })
+    }
   }
 
 
@@ -133,6 +191,7 @@ class Sparrow {
         });
       });
     }).catch(err => {
+      console.log(err);      
       console.log('device id not found in db. Please register device first')
     });
   }
@@ -159,13 +218,13 @@ class Sparrow {
    * Check if has internet connection.
    */
   isOnline() {
-    this.log('Checking if device is online')
-    let sparrow = this
+    let sparrow = this    
+    sparrow.log('Checking if device is online', 'start')
     return isOnline().then(online => {
       if (online) {
+        sparrow.log('Device is online.', 'end')        
         return true
       } else {
-        console.log("connect again to wifi");
         sparrow.connectToWifi();
       }
     });
@@ -206,7 +265,7 @@ class Sparrow {
           }
         }
       } else {
-        sparrow.log('No networks found. Make sure wifi available.')
+        sparrow.log('No networks found. Make sure wifi is available.')
         sparrow.init()
       }
       // networks.
@@ -218,69 +277,63 @@ class Sparrow {
     })
   }
 
-  addSlide(docData) {
-    if (docData.type === "image") {
-      const landscape = docData.ads['1920_1080'].default
-      const potrait = docData.ads['1080_1920'].default || null
-      // fucking orientation isn't working :-S
-      let content = `
-      <picture>
-        <source srcset="${potrait}" media="screen and (max-width: 1000px)"/>
-        <source srcset="${landscape}" media="screen and (min-width: 1000px)" />
-        <img src="${landscape}" alt="">
-      </picture>
-      `
-      const slide = document.createElement('div');
-      slide.className = 'ad';
-      if ($(this.sliderElement).children().length < 1) {
-        slide.className = 'ad active-slide'
+  buildSlideHtml(docData){
+    const slide = document.createElement('div');
+    let content = ''
+    let sparrow = this
+    let ads = docData.ads[sparrow.screenFormat]    
+    if (docData.type === "image") {  
+      for (const key in ads) {
+        if (ads.hasOwnProperty(key)) {
+          const element = ads[key];
+          console.log(element);          
+          content += `
+          <picture class="ad-child ${key}" data-duration="${docData.duration}" data-name="${docData.name}" data-type="${docData.type}">
+            <img src="${element}" alt="">
+          </picture>
+          `          
+        }
       }
-      slide.setAttribute('data-duration', docData.duration)
-      slide.setAttribute('data-name', docData.name)
-      slide.setAttribute('data-type', docData.type)      
-      slide.id = docData.id
-      slide.innerHTML = content;
-      this.sliderElement.append(slide) 
+      // fucking orientation isn't working :-S
     }
-    else if (docData.type == "video"){
-
-      let content = `
-      <video autoplay loop muted preload>
-        <source src="${docData.ads['1080_1920'].default.webm}" type=video/webm> 
-        <source src="${docData.ads['1080_1920'].default.mp4}" type=video/mp4>
-      </video>`
-      const slide = document.createElement('div');
-      slide.className = 'ad';
-      slide.setAttribute('data-name', docData.name)
-      slide.setAttribute('data-type', docData.type)
-      slide.setAttribute('data-duration', '5000')      
-      slide.id = docData.id
-      slide.innerHTML = content;
-      this.sliderElement.append(slide) 
-
+    else if (docData.type == "video") {
+      for (const key in ads) {
+        if (ads.hasOwnProperty(key)) {
+          const element = ads[key];
+          content += `
+          <video class="ad-child ${key}" data-duration="${docData.duration}" data-name="${docData.name}" data-type="${docData.type}" muted preload>
+            <source src="${element.webm}" type=video/webm> 
+            <source src="${element.mp4}" type=video/mp4>
+          </video>`
+        }
+      }
     }
+
+    if ($(this.sliderElement).children().length < 1) {
+      slide.className = 'ad active-slide'
+    }
+    slide.className = 'ad';
+    slide.id = docData.id
+    slide.innerHTML = content;
+    return slide
+    
+  }
+
+  addSlide(docData) {
+    let slide = this.buildSlideHtml(docData)
+    this.sliderElement.append(slide)   
   }
 
   modifySlide(docData) {
-    const landscape = docData.ads['1920_1080'].default
-    const potrait = docData.ads['1080_1920'].default || null
-
-    let content = `
-      <picture>
-        <source srcset="${potrait}" media="screen and (max-width: 1000px)"/>
-        <source srcset="${landscape}" media="screen and (min-width: 1000px)" />
-        <img src="${landscape}" alt="">
-      </picture>
-      `
+    let slide = this.buildSlideHtml(docData)    
     const elem = document.getElementById(docData.id);
-    elem.innerHTML = content
+    elem.innerHTML = slide.innerHTML
   }
 
   /**
    * 
    */
   getAdsets(deviceId) {
-    console.log("getting ad of:");
     const deviceAdsetsRef = db.collection("/deviceAdsets").doc(deviceId);
     let sparrow = this
     deviceAdsetsRef.onSnapshot((doc) => {
@@ -297,8 +350,8 @@ class Sparrow {
         // sparrow.downloadAds()
         let adsStatic = []
         snapshot.docs.forEach(function (doc) {
-          adsStatic.push(doc.data());
-        })
+          adsStatic.push(doc.data().ads[sparrow.screenFormat]);
+        })               
         adsStatic = JSON.stringify(adsStatic)
         sparrow.cacheAssets(adsStatic).then(()=>{
           snapshot.docChanges.forEach(function (change) {
@@ -316,16 +369,15 @@ class Sparrow {
             sparrow.reRenderSlider()
           });
         })
-        console.log("should be done by now?");
         // this.getAds(doc)
       });
     })
   };
 
   reRenderSlider() {
-    console.log(this.numOfAdsets);
     let sparrow = this
     let ads = $(sparrow.sliderElement).children()
+    sparrow.log('Render slider')
 
     if (ads.length !== this.numOfAdsets)
       return
@@ -336,14 +388,27 @@ class Sparrow {
     }
 
     const durationList = $('.ad').map(function (index, item) {
-      return item.getAttribute('data-duration');
+      console.log($(item).find('.ad-child').attr('data-duration'))
+      return $(item).find('.ad-child').attr('data-duration')
     });
 
-    console.log(durationList);
+    // console.log(durationList);
+    console.log("before change slide function");        
     let slideIndex = 0;
+    let $activeSlide = ''
+    if (!$activeSlide.length) {
+      $activeSlide = $('.ad').first().addClass('active-slide')
+    }
     const changeSlide = function (timing) {
+      console.log("change slide function");    
+      let $activeSlide = $('.active-slide');
+      if ($activeSlide.find('video').length) {
+        console.log("has video");
+        console.log($activeSlide.find('video').get(0));
+        $activeSlide.find('video').get(0).play()
+      }
       sparrow.slideTimeOut = setTimeout(function () {
-        let $activeSlide = $('.active-slide');
+        // check for video
         if (timing !== 0) {
           // slider.slick('slickNext');
           $activeSlide.removeClass('active-slide').next().addClass('active-slide')
@@ -363,7 +428,8 @@ class Sparrow {
 
   // cache all assets
   cacheAssets(assets) {
-    this.log('downloading ads to cache')
+    const sparrow = this
+    sparrow.log('downloading ads to cache', 'start')
     let adUrls = getUrls(assets);
     assets = Array.from(adUrls)
     return new Promise(function (resolve, reject) {
@@ -375,6 +441,7 @@ class Sparrow {
           cache.addAll(assets)
             .then((cache) => {
               console.log('All assets added to cache')
+              sparrow.log('Done adding ads to cache. Retreiving ads', 'end')
               resolve()
             })
             .catch(err => {

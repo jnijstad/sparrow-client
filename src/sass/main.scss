@@ -1,3 +1,15 @@
+/* apply a natural box layout model to all elements, but allowing components to change */
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
 html,
 body {
   width: 100%;
@@ -41,9 +53,16 @@ img {
   border: black 1px solid;
   box-shadow: 0 0 10px black;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
   vertical-align: middle;
-  display: none;
+  // display: block !important;
+  display: flex;
+  align-items: center;
+  // justify-content: center;
+
+  .message {
+    
+  }
 }
 
 body.sparrow-on {
@@ -83,3 +102,81 @@ body.sparrow-on {
   }
 }
 
+// time based ad variants
+
+// default at 2
+.ad-child.default {
+  z-index: 2;
+}
+
+body.evening {
+  .ad-child.evening {
+    z-index: 9;
+  }
+}
+
+body.afternoon {
+  .ad-child.afternoon {
+    z-index: 9;
+  }
+}
+
+body.morning {
+  .ad-child.morning {
+    z-index: 9;
+  }
+}
+
+
+
+
+// spinner
+.spinner {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+
+}
+
+.double-bounce1,
+.double-bounce2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #3e42b1;
+  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
+  animation: sk-bounce 2.0s infinite ease-in-out;
+}
+
+.double-bounce2 {
+  -webkit-animation-delay: -1.0s;
+  animation-delay: -1.0s;
+}
+
+@-webkit-keyframes sk-bounce {
+  0%,
+  100% {
+    -webkit-transform: scale(0.0)
+  }
+  50% {
+    -webkit-transform: scale(1.0)
+  }
+}
+
+@keyframes sk-bounce {
+  0%,
+  100% {
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  }
+  50% {
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+  }
+}

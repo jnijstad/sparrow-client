@@ -58,7 +58,6 @@
     "is-online": "^7.0.0",
     "jquery": "^3.3.1",
     "node-wifi": "^2.0.4",
-    "ramda": "^0.25.0",
     "systeminformation": "^3.37.4"
   },
   "devDependencies": {
@@ -68,7 +67,7 @@
     "babel-plugin-transform-object-rest-spread": "^7.0.0-beta.3",
     "chai": "^4.1.0",
     "css-loader": "^0.28.7",
-    "electron": "1.8.2",
+    "electron": "1.8.4",
     "electron-builder": "^20.2.0",
     "electron-mocha": "^5.0.0",
     "electron-rebuild": "^1.7.3",
